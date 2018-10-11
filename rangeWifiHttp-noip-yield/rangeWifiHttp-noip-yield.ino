@@ -5,8 +5,10 @@
 #include <ESP8266mDNS.h> // https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266mDNS
 #include <ESP8266WiFi.h> // https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi
 
-#include <SPI.h> // https://github.com/esp8266/Arduino/tree/master/libraries/SPI
+const char* version="rangeWifiHttp-noip-yield";
 
+#include <SPI.h> // https://github.com/esp8266/Arduino/tree/master/libraries/SPI
+//#define HOME
 // Enables debug print outs
 #define DEBUG 1
 // Set to 1 to disable reset logic from NodeMCU (ESP8266 board)
@@ -19,12 +21,13 @@
 //
 // WiFi SSID / password
 ////
-//const char* ssid = "ML-guest";
-//const char* password = "mlguest538!";
-//const char *ssid = "ATTVMb9amS";
-//const char *password = "xmcpmjhvr7u7";
+#ifdef HOME
+const char *ssid = "ATTjAWscI2";
+const char *password = "csx#v=e%uq3t";
+#else
 const char *ssid = "TXTdev";
 const char *password = "Shoot999";
+#endif
 
 // Commands between NodeMCU and Arduino SPI slave
 #define RESETCMD 1
@@ -172,8 +175,8 @@ void handleGetHitData() {
       }
     }
     json += String("\"]}");
-//    Serial.println(json);
     hitData = "";
+//    Serial.println(json);
     server.send(200, "application/json", json);
   }
 }
@@ -188,6 +191,10 @@ void setup()
   Serial.begin(115200);
   delay(10);
 
+  Serial.println();
+  Serial.print("Version: ");
+  Serial.println(version);
+
   // Initialize SPI  
   SPI.begin();
 
@@ -201,6 +208,9 @@ void setup()
   // Connect to WiFi network
   Serial.println();
   Serial.println();
+  Serial.print("MAC: ");
+  Serial.println(WiFi.macAddress());
+  Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi .mode(WIFI_STA);
@@ -211,6 +221,7 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
+    yield();
     Serial.print(".");
   }
   Serial.println("");
@@ -259,9 +270,11 @@ void setup()
     SPI.transfer(testString[i]);
   }
   delay(100);
+  yield();
   unsigned char cmd = SPI.transfer(0xFF);
   while (cmd == 0xff) {
      cmd = SPI.transfer(0xFF);
+     yield();
   }
   debugMsgInt("Rcv Command: ", cmd, false);
   delay(1);
@@ -384,8 +397,8 @@ void sendCommandWithoutData(unsigned char cmd, String cmdName) {
   // No length
   SPI.transfer((char)0);
 
+  yield();
   delay(100);
-
   // Receive and process any response
   unsigned char recvCommand;
   String response = recvSerial(&recvCommand);
